@@ -2,15 +2,26 @@ import { Box, IconButton, Stack, Typography, InputBase, Button, Divider, Avatar,
   '@mui/material'
 import { ArchiveBox, CircleDashed, MagnifyingGlass } from 'phosphor-react';
 import {useTheme } from '@mui/material/styles';
-import React from 'react';
+import React, { useEffect } from 'react';
 import {ChatList} from '../../data';
 import { Search, SearchIconWrapper, StyledInputBase } from '../../components/Search';
 import ChatElement from '../../components/ChatElement';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchUsers } from '../../redux/slices/userSlice';
 
 const Chats = () => {
   const theme = useTheme();
-      const { users } = useSelector((state) => state.users);
+  const dispatch = useDispatch();
+  const { users } = useSelector((state) => state.users);
+  const { uid } = useSelector((state) => state.auth);
+  
+
+  useEffect(()=>{
+    if(uid){
+      dispatch(fetchUsers({uid}));
+    }
+  },[uid])
+
   return (
     <Box
       sx={{

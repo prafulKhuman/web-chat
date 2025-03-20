@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { firestore } from "../../firebaseConfig";
-import { collection, addDoc, getDocs, updateDoc, doc } from "firebase/firestore";
+import { dbFireStore } from "../../firebaseConfig";
+import { collection, addDoc, getDocs, updateDoc, doc , query , where } from "firebase/firestore";
 import { serverTimestamp } from "firebase/database";
 
 // Async thunk for adding a user
@@ -8,8 +8,7 @@ export const addUser = createAsyncThunk(
   "users/addUser",
   async ({ name, email, uid }, { rejectWithValue }) => {
     try {
-		console.log("success");
-      const docRef = await addDoc(collection(firestore, "users"), {
+      const docRef = await addDoc(collection(dbFireStore, "users"), {
         name,
         email,
 		    uid,
@@ -17,7 +16,6 @@ export const addUser = createAsyncThunk(
       });
       return { id: docRef.id, name, email,uid };
     } catch (error) {
-		console.log("error",error);
       return rejectWithValue(error.message);
     }
   }
@@ -26,15 +24,21 @@ export const addUser = createAsyncThunk(
 // Async thunk for fetching users
 export const fetchUsers = createAsyncThunk(
   "users/fetchUsers",
-  async (_, { rejectWithValue }) => {
+  async ({ uid }, { rejectWithValue }) => {
     try {
-      const querySnapshot = await getDocs(collection(firestore, "users"));
+      if (!uid) {
+        console.log("UID is required but was undefined or null.");
+        return
+      }
+      const q = query(collection(dbFireStore, "users"), where("uid", "==", uid));
+      const querySnapshot = await getDocs(q);
       const users = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
       return users;
     } catch (error) {
+      console.log("error in fetch users" , error);
       return rejectWithValue(error.message);
     }
   }
@@ -44,7 +48,7 @@ export const updateOnlineStatus = createAsyncThunk(
   "users/updateOnlineStatus",
   async ({ uid, isOnline }, { rejectWithValue }) => {
     try {
-      const userRef = doc(firestore, "users", uid);
+      const userRef = doc(dbFireStore, "users", uid);
       await updateDoc(userRef, {
         isOnline,
         lastSeen: serverTimestamp(),
